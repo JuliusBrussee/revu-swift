@@ -42,7 +42,7 @@ These screenshots come from the earlier Revu product materials and still do a go
 
 ### Study Session
 
-![Revu study session](docs/screenshots/languages.png)
+![Revu study session](docs/screenshots/lifelong.png)
 
 ### Import Workflow
 
@@ -50,7 +50,7 @@ These screenshots come from the earlier Revu product materials and still do a go
 
 ### Desktop Workspace
 
-![Revu workspace](docs/screenshots/university.png)
+![Revu workspace](docs/screenshots/med.png)
 
 ## Requirements
 
