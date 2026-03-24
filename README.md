@@ -1,114 +1,117 @@
+<div align="center">
+
 # Revu
 
-Revu is a polished, local-first macOS study app for decks, cards, exams, study guides, and FSRS-based review sessions. It is opinionated in a good way: fast keyboard-friendly workflows, a dense but calm desktop UI, strong study primitives, and a structure that makes serious studying feel organized instead of chaotic.
+**Local-first spaced repetition for macOS.**\
+Decks, cards, exams, study guides, and FSRS-powered review sessions in one desktop workspace.
 
-This public repository contains the standalone macOS application and its tests. It is an older branch of the product that I decided to open source because it is still a genuinely useful app and a solid codebase for people who care about local-first software, SwiftUI desktop apps, and spaced-repetition tooling.
+[![macOS](https://img.shields.io/badge/macOS-14%2B-000000?style=flat-square&logo=apple&logoColor=white)](https://github.com/julb/revu-swift)
+[![Swift](https://img.shields.io/badge/Swift-6-F05138?style=flat-square&logo=swift&logoColor=white)](https://swift.org)
+[![License](https://img.shields.io/badge/License-GPL--3.0-blue?style=flat-square)](LICENSE)
 
-## A Note From The Company
+<img src="docs/screenshots/lifelong.png" alt="Revu dashboard showing today's review session, learning intelligence stats, and deck sidebar" width="820">
 
-Revu is my company. The current product continues to evolve separately, and the newer version lives at [revu.cards](https://revu.cards).
+</div>
 
-This repository is an older version of the app, published deliberately as a gift to the open-source community. I did not want this work to disappear into a private archive when there was still a lot here that could be useful, interesting, or inspiring to other builders. If you want the newest commercial product, go to [revu.cards](https://revu.cards). If you want a capable local-first macOS study app that you can inspect, modify, and learn from, this repo is for you.
+---
 
-## Why This App Is Cool
+Revu is an opinionated macOS study app built around real workflows. It uses [FSRS](https://github.com/open-spaced-repetition/fsrs4anki) scheduling, stores everything locally, and gives you a dense, keyboard-friendly interface that makes serious studying feel organized.
 
-- It is built around real study workflows instead of toy flashcard demos.
-- It combines decks, cards, exams, study guides, folders, review history, and forecasting in one coherent desktop app.
-- It uses FSRS-based scheduling, so the review engine is not just cosmetic.
-- It is local-first, which means the app is fast, self-contained, and usable without hosted infrastructure.
-- It has a thoughtful SwiftUI macOS interface with a real design system behind it.
-- It is the kind of app that feels substantial: not just a single feature, but a full study workspace.
+This is a standalone, fully functional version of the app published as open source. The commercial product continues at [revu.cards](https://revu.cards).
 
-## What’s Included
+## Features
 
-- Deck and card management with nested folders
-- FSRS-based study sessions with review history and forecasting
-- Local course, exam, and study-guide workflows
-- Import support for Anki, Revu JSON, CSV/TSV, and Markdown blocks
-- Export support for Revu JSON backups
-- A SwiftUI design system used across the macOS app
-
-## What’s Not Included
-
-- Website code
-- Hosted backend infrastructure
-- Authentication, billing, subscriptions, or account sync
-- AI generation, AI tutoring, external tool integrations, or provider configuration
-- Internal planning files and private repo history
+- **FSRS-based review engine** -- spaced repetition scheduling that adapts to your memory, not just intervals on a timer
+- **Full study workspace** -- decks, nested folders, cards, exams, study guides, courses, and review history in one place
+- **Study session forecasting** -- see upcoming workload, retention trajectory, and review velocity
+- **Rich import pipeline** -- Anki (.apkg, .colpkg, profiles), CSV/TSV, Markdown blocks, and Revu JSON
+- **Local-first architecture** -- SQLite-backed, no account required, no network dependency, fast
+- **SwiftUI design system** -- a real token-based system (spacing, typography, color, radius, shadow, animation) behind every screen
+- **Keyboard-driven workflows** -- built for speed, not clicking through modals
+- **Export and backup** -- full-fidelity Revu JSON export with stable identifiers
 
 ## Screenshots
 
-These screenshots come from the earlier Revu product materials and still do a good job showing the feel of the macOS app.
+<table>
+<tr>
+<td><img src="docs/screenshots/med.png" alt="Learning pulse with retention trajectory and review velocity charts" width="400"></td>
+<td><img src="docs/screenshots/certifications.png" alt="Study session with multiple-choice question and progress tracking" width="400"></td>
+</tr>
+<tr>
+<td><em>Learning pulse -- retention, velocity, and workload forecasting</em></td>
+<td><em>Study session -- multiple-choice with FSRS scheduling</em></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/university.png" alt="Import workflow with template selection for Anki, Markdown, CSV, and JSON" width="400"></td>
+<td><img src="docs/screenshots/languages.png" alt="Review session with markdown rendering and math support" width="400"></td>
+</tr>
+<tr>
+<td><em>Import decks from Anki, spreadsheets, Markdown, or JSON</em></td>
+<td><em>Card review with markdown and LaTeX rendering</em></td>
+</tr>
+</table>
 
-### Study Session
+## Getting Started
 
-![Revu study session](docs/screenshots/lifelong.png)
+**Requirements:** macOS 14+, Xcode 16+
 
-### Import Workflow
-
-![Revu import workflow](docs/screenshots/certifications.png)
-
-### Desktop Workspace
-
-![Revu workspace](docs/screenshots/med.png)
-
-## Requirements
-
-- macOS 14 or later
-- Xcode 16 or later
-
-## Build
-
-Open `Revu.xcodeproj` in Xcode and run the `Revu` scheme.
-
-CLI build:
+Open `Revu.xcodeproj` in Xcode and run the **Revu** scheme. No environment variables or backend setup needed.
 
 ```bash
+# Build from the command line
 xcodebuild -project Revu.xcodeproj -scheme Revu -destination 'platform=macOS' build
-```
 
-CLI tests:
-
-```bash
+# Run tests
 xcodebuild test -project Revu.xcodeproj -scheme RevuTests -destination 'platform=macOS'
 ```
 
-## App Data Location
+App data is stored locally at:
 
-By default Revu stores data in:
-
-```text
+```
 ~/Library/Application Support/revu/v1/
+├── revu.sqlite3       # Local database
+├── attachments/       # Imported media
+└── backups/           # Export staging
 ```
 
-Key paths inside that directory:
+## Architecture
 
-- `revu.sqlite3`: local database
-- `attachments/`: imported media and study-guide attachments
-- `backups/`: local backup/export staging
+Revu follows MVVM with actor-isolated persistence and pure scheduling logic:
 
-## Repo Layout
+```
+Revu/Revu/
+├── App/           App entry, commands, workspace bootstrap
+├── Views/         SwiftUI screens and reusable components (no business logic)
+├── ViewModels/    @MainActor state and UI orchestration
+├── Services/      Forecasting, session progression, import/export coordination
+├── SRS/           FSRS scheduler and review math (pure, no side effects)
+├── Store/         Actor-based SQLite persistence, DTOs, repositories
+├── Import/        Anki, CSV, Markdown, JSON parsers
+└── Export/        Backup generation
 
-- `Revu/`: macOS app target resources and source tree
-- `RevuTests/`: Swift Testing suite
-- `docs/architecture.md`: module and storage overview
-- `docs/import-export.md`: supported formats and merge behavior
-- `docs/ui-design-system.md`: canonical UI rules and tokens
+RevuTests/         Swift Testing suite
+docs/              Architecture, import/export spec, UI design system
+```
 
-## Development Notes
+Key design decisions:
 
-- The app is local-first. It should build and run without environment variables.
-- Public-safe bundle identifiers and URL handling are already stripped of private auth flows.
-- If you add new UI, use the design tokens in `Revu/Revu/Support/DesignSystem.swift`.
+- **Views have no business logic.** All mutations go through view models and services.
+- **SRS algorithms are pure functions.** Inputs are card state, review history, and settings. No side effects, easy to test.
+- **Storage is actor-isolated.** `SQLiteStore` handles schema management and concurrency; repositories provide the async API.
+- **Design system is token-based.** Spacing, color, typography, radius, shadow, and animation are all defined in [`DesignSystem.swift`](Revu/Revu/Support/DesignSystem.swift) with reusable components in [`NotionStyleComponents.swift`](Revu/Revu/Views/Common/NotionStyleComponents.swift).
 
-## Open-Source Scope
+See [`docs/architecture.md`](docs/architecture.md) for the full module overview, [`docs/import-export.md`](docs/import-export.md) for format specs and merge behavior, and [`docs/ui-design-system.md`](docs/ui-design-system.md) for the canonical UI rules.
 
-This repo is intentionally the macOS app only. The hosted product, website, backend systems, authentication, billing, sync, and newer commercial product work are not part of this repository. The goal here is to preserve and share a strong standalone version of Revu that can live on its own as open-source software.
+## Contributing
+
+Contributions are welcome. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for guidelines.
+
+The short version: keep PRs focused, follow the MVVM split, use design system tokens instead of magic numbers, run the test suite before opening a PR, and check for accidental private strings in changed files.
+
+Bug reports should include macOS version, reproduction steps, and sample data if the issue involves import or scheduling.
 
 ## License
 
-The code in this directory is licensed under `GPL-3.0-only`. See `LICENSE`.
+[GPL-3.0-only](LICENSE). The Revu name and logo are trademarks and are not licensed for reuse under the GPL.
 
-The Revu name, logo, and other brand assets are not licensed for reuse as
-trademarks. GPL covers copyright licensing; it does not grant trademark
-rights.
+> The commercial product with sync, AI features, and the latest updates lives at [revu.cards](https://revu.cards). This repo is the standalone macOS app -- fully functional, open source, and a solid codebase for anyone interested in local-first software, SwiftUI desktop apps, or spaced-repetition tooling.
