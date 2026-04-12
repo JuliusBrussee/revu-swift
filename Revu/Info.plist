@@ -5,14 +5,14 @@
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>
-			<key>UTTypeIdentifier</key>
-			<string>com.example.revu-swift.deck</string>
-			<key>UTTypeDescription</key>
-			<string>Revu Deck Reference</string>
 			<key>UTTypeConformsTo</key>
 			<array>
 				<string>public.data</string>
 			</array>
+			<key>UTTypeDescription</key>
+			<string>Revu Deck Reference</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.example.revu-swift.deck</string>
 			<key>UTTypeTagSpecification</key>
 			<dict/>
 		</dict>

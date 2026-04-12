@@ -17,10 +17,12 @@ struct OnboardingFlowView: View {
     @State private var selectedImportOption: ImportOption = .fresh
     @State private var animateBackdrop = false
     @State private var isAnkiImportPresented = false
+    @State private var isQuizletImportPresented = false
 
     private enum ImportOption: String, CaseIterable, Identifiable {
         case fresh
         case anki
+        case quizlet
 
         var id: String { rawValue }
 
@@ -28,6 +30,7 @@ struct OnboardingFlowView: View {
             switch self {
             case .fresh: return "Start fresh"
             case .anki: return "Import from Anki"
+            case .quizlet: return "Import from Quizlet"
             }
         }
 
@@ -37,6 +40,8 @@ struct OnboardingFlowView: View {
                 return "Create decks manually or import standard files when you're ready."
             case .anki:
                 return "Bring over your existing review material and keep studying locally."
+            case .quizlet:
+                return "Paste an exported Quizlet set to turn it into a Revu deck instantly."
             }
         }
 
@@ -44,6 +49,7 @@ struct OnboardingFlowView: View {
             switch self {
             case .fresh: return "sparkles"
             case .anki: return "square.and.arrow.down"
+            case .quizlet: return "doc.on.clipboard"
             }
         }
     }
@@ -73,6 +79,12 @@ struct OnboardingFlowView: View {
         .sheet(isPresented: $isAnkiImportPresented) {
             AnkiImportFlowView { _ in
                 isAnkiImportPresented = false
+                onComplete()
+            }
+        }
+        .sheet(isPresented: $isQuizletImportPresented) {
+            QuizletImportFlowView { _ in
+                isQuizletImportPresented = false
                 onComplete()
             }
         }
@@ -338,9 +350,12 @@ struct OnboardingFlowView: View {
 
     private func advance() {
         if step == .ready {
-            if selectedImportOption == .anki {
+            switch selectedImportOption {
+            case .anki:
                 isAnkiImportPresented = true
-            } else {
+            case .quizlet:
+                isQuizletImportPresented = true
+            case .fresh:
                 onComplete()
             }
             return

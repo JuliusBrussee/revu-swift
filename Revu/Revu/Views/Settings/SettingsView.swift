@@ -8,6 +8,7 @@ struct SettingsView: View {
     @State private var isLoaded = false
     @State private var retentionPreset: RetentionPreset = .custom
     @State private var isAnkiImportPresented = false
+    @State private var isQuizletImportPresented = false
     @StateObject private var dataManagement = SettingsDataManagementViewModel(storage: DataController.shared.storage)
     @State private var destructiveAction: DestructiveAction?
     @State private var alert: SettingsAlert?
@@ -74,6 +75,9 @@ struct SettingsView: View {
         .task { await loadSettings() }
         .sheet(isPresented: $isAnkiImportPresented) {
             AnkiImportFlowView()
+        }
+        .sheet(isPresented: $isQuizletImportPresented) {
+            QuizletImportFlowView()
         }
         .confirmationDialog(
             destructiveAction?.dialogTitle ?? "",
@@ -636,7 +640,7 @@ struct SettingsView: View {
                 Text("Import")
                     .font(DesignSystem.Typography.heading)
                     .foregroundStyle(.primary)
-                Text("Move your full Anki collection into Revu, including decks, tags, and scheduling state.")
+                Text("Bring your existing study material into Revu from other apps.")
                     .font(DesignSystem.Typography.caption)
                     .foregroundStyle(.secondary)
 
@@ -647,6 +651,19 @@ struct SettingsView: View {
                         Image(systemName: "arrow.triangle.2.circlepath")
                             .font(DesignSystem.Typography.bodyMedium)
                         Text("Import from Anki…")
+                            .font(DesignSystem.Typography.bodyMedium)
+                    }
+                    .primaryButtonStyle()
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    isQuizletImportPresented = true
+                } label: {
+                    HStack(spacing: DesignSystem.Spacing.sm) {
+                        Image(systemName: "doc.on.clipboard")
+                            .font(DesignSystem.Typography.bodyMedium)
+                        Text("Import from Quizlet…")
                             .font(DesignSystem.Typography.bodyMedium)
                     }
                     .primaryButtonStyle()
