@@ -9,6 +9,7 @@ import AppKit
 struct ImportGuideSheetView: View {
     let onDismiss: () -> Void
     let onChooseFile: () -> Void
+    var onQuizletImport: (() -> Void)? = nil
     
     @State private var isAppearing = false
     @State private var selectedTab: ImportTab = .prompts
@@ -111,6 +112,7 @@ struct ImportGuideSheetView: View {
                 FormatBadge(icon: "doc.text", label: "Markdown")
                 FormatBadge(icon: "tablecells", label: "CSV")
                 FormatBadge(icon: "curlybraces", label: "JSON")
+                FormatBadge(icon: "doc.on.clipboard", label: "Quizlet")
             }
             .offset(y: isAppearing ? 0 : 10)
             .opacity(isAppearing ? 1 : 0)
@@ -247,6 +249,29 @@ struct ImportGuideSheetView: View {
             .keyboardShortcut(.cancelAction)
 
             Spacer()
+
+            if let onQuizletImport {
+                Button(action: onQuizletImport) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "doc.on.clipboard")
+                            .font(.system(size: 13, weight: .medium))
+                        Text("Import from Quizlet…")
+                            .font(DesignSystem.Typography.bodyMedium)
+                    }
+                    .foregroundStyle(DesignSystem.Colors.primaryText)
+                    .padding(.horizontal, DesignSystem.Spacing.lg)
+                    .padding(.vertical, DesignSystem.Spacing.sm)
+                    .background(
+                        Capsule()
+                            .fill(DesignSystem.Colors.hoverBackground)
+                    )
+                    .overlay(
+                        Capsule()
+                            .stroke(DesignSystem.Colors.separator, lineWidth: 1)
+                    )
+                }
+                .buttonStyle(ImportButtonStyle())
+            }
 
             Button(action: onChooseFile) {
                 HStack(spacing: 6) {

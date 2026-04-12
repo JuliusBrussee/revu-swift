@@ -54,6 +54,7 @@ struct RootView: View {
     @State private var isOnboardingPresented = false
     @State private var activeSmartStudyFilter: SmartFilter?
     @State private var isImportGuidePresented = false
+    @State private var isQuizletImportPresented = false
     @State private var hasSeenQuickFindSignal = false
     @State private var hasSeenOnboardingSignal = false
     @State private var previousSelection: SidebarItem? = nil
@@ -180,8 +181,15 @@ struct RootView: View {
                         Task { @MainActor in
                             beginFileImportFlow()
                         }
+                    },
+                    onQuizletImport: {
+                        isImportGuidePresented = false
+                        isQuizletImportPresented = true
                     }
                 )
+            }
+            .sheet(isPresented: $isQuizletImportPresented) {
+                QuizletImportFlowView()
             }
             .sheet(isPresented: $isCourseSetupPresented, onDismiss: { courseToEdit = nil }) {
                 CourseSetupView(
