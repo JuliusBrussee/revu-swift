@@ -1810,14 +1810,10 @@ actor SQLiteStore {
                 int_value INTEGER
             )
             """,
-            "CREATE VIRTUAL TABLE IF NOT EXISTS cards_fts USING fts5(card_id UNINDEXED, front, back, tags)",
-            "CREATE VIRTUAL TABLE IF NOT EXISTS study_guides_fts USING fts5(guide_id UNINDEXED, title, markdown_content, tags)",
-            "CREATE TRIGGER IF NOT EXISTS trg_cards_ai AFTER INSERT ON cards BEGIN INSERT INTO cards_fts(rowid, card_id, front, back, tags) VALUES (new.rowid, new.id, new.front, new.back, new.tags_json); END",
-            "CREATE TRIGGER IF NOT EXISTS trg_cards_ad AFTER DELETE ON cards BEGIN INSERT INTO cards_fts(cards_fts, rowid, card_id, front, back, tags) VALUES('delete', old.rowid, old.id, old.front, old.back, old.tags_json); END",
-            "CREATE TRIGGER IF NOT EXISTS trg_cards_au AFTER UPDATE ON cards BEGIN INSERT INTO cards_fts(cards_fts, rowid, card_id, front, back, tags) VALUES('delete', old.rowid, old.id, old.front, old.back, old.tags_json); INSERT INTO cards_fts(rowid, card_id, front, back, tags) VALUES (new.rowid, new.id, new.front, new.back, new.tags_json); END",
-            "CREATE TRIGGER IF NOT EXISTS trg_study_guides_ai AFTER INSERT ON study_guides BEGIN INSERT INTO study_guides_fts(rowid, guide_id, title, markdown_content, tags) VALUES (new.rowid, new.id, new.title, new.markdown_content, new.tags_json); END",
-            "CREATE TRIGGER IF NOT EXISTS trg_study_guides_ad AFTER DELETE ON study_guides BEGIN INSERT INTO study_guides_fts(study_guides_fts, rowid, guide_id, title, markdown_content, tags) VALUES('delete', old.rowid, old.id, old.title, old.markdown_content, old.tags_json); END",
-            "CREATE TRIGGER IF NOT EXISTS trg_study_guides_au AFTER UPDATE ON study_guides BEGIN INSERT INTO study_guides_fts(study_guides_fts, rowid, guide_id, title, markdown_content, tags) VALUES('delete', old.rowid, old.id, old.title, old.markdown_content, old.tags_json); INSERT INTO study_guides_fts(rowid, guide_id, title, markdown_content, tags) VALUES (new.rowid, new.id, new.title, new.markdown_content, new.tags_json); END",
+            "CREATE VIEW IF NOT EXISTS cards_search_source AS SELECT rowid, id AS card_id, front, back, tags_json AS tags FROM cards",
+            "CREATE VIRTUAL TABLE IF NOT EXISTS cards_fts USING fts5(card_id UNINDEXED, front, back, tags, content='cards_search_source', content_rowid='rowid')",
+            "CREATE VIEW IF NOT EXISTS study_guides_search_source AS SELECT rowid, id AS guide_id, title, markdown_content, tags_json AS tags FROM study_guides",
+            "CREATE VIRTUAL TABLE IF NOT EXISTS study_guides_fts USING fts5(guide_id UNINDEXED, title, markdown_content, tags, content='study_guides_search_source', content_rowid='rowid')",
             """
             CREATE TABLE IF NOT EXISTS courses (
                 id TEXT PRIMARY KEY,
@@ -1963,7 +1959,46 @@ actor SQLiteStore {
             try execute(sql)
         }
 
+        try migrateFTSToExternalContent()
+
         try backfillLessonsFromLegacyData()
+    }
+
+    /// Migrate standalone FTS5 tables (with triggers) to external content tables.
+    /// The standalone FTS5 'delete' command is broken on some SQLite builds (3.51.0),
+    /// causing "SQL logic error" on card UPSERTs. External content tables avoid this
+    /// by reading directly from the source table.
+    private func migrateFTSToExternalContent() throws {
+        // Check if old triggers exist — if so, we need to migrate
+        let triggerCheckSQL = "SELECT count(*) FROM sqlite_master WHERE type='trigger' AND name='trg_cards_au'"
+        var stmt: OpaquePointer?
+        try prepare(triggerCheckSQL, into: &stmt)
+        defer { sqlite3_finalize(stmt) }
+        guard sqlite3_step(stmt) == SQLITE_ROW else { return }
+        let triggerCount = sqlite3_column_int(stmt, 0)
+        guard triggerCount > 0 else { return }
+
+        // Drop old triggers
+        try execute("DROP TRIGGER IF EXISTS trg_cards_au")
+        try execute("DROP TRIGGER IF EXISTS trg_cards_ai")
+        try execute("DROP TRIGGER IF EXISTS trg_cards_ad")
+        try execute("DROP TRIGGER IF EXISTS trg_study_guides_au")
+        try execute("DROP TRIGGER IF EXISTS trg_study_guides_ai")
+        try execute("DROP TRIGGER IF EXISTS trg_study_guides_ad")
+
+        // Drop old standalone FTS tables
+        try execute("DROP TABLE IF EXISTS cards_fts")
+        try execute("DROP TABLE IF EXISTS study_guides_fts")
+
+        // Recreate as external content tables with views providing column name mapping
+        try execute("CREATE VIEW IF NOT EXISTS cards_search_source AS SELECT rowid, id AS card_id, front, back, tags_json AS tags FROM cards")
+        try execute("CREATE VIRTUAL TABLE IF NOT EXISTS cards_fts USING fts5(card_id UNINDEXED, front, back, tags, content='cards_search_source', content_rowid='rowid')")
+        try execute("CREATE VIEW IF NOT EXISTS study_guides_search_source AS SELECT rowid, id AS guide_id, title, markdown_content, tags_json AS tags FROM study_guides")
+        try execute("CREATE VIRTUAL TABLE IF NOT EXISTS study_guides_fts USING fts5(guide_id UNINDEXED, title, markdown_content, tags, content='study_guides_search_source', content_rowid='rowid')")
+
+        // Rebuild FTS indexes from source tables
+        try execute("INSERT INTO cards_fts(cards_fts) VALUES('rebuild')")
+        try execute("INSERT INTO study_guides_fts(study_guides_fts) VALUES('rebuild')")
     }
 
     private func backfillLessonsFromLegacyData() throws {
